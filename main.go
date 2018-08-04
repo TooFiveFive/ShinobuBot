@@ -228,7 +228,7 @@ func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		if strings.Contains(m.Content, "add") {
 			for _, element := range adminChannels {
-				if m.ChannelID == element {
+				if m.ChannelID == element && strings.Contains(m.Content, "> ") {
 					if strings.Split(m.Content, " ")[1] == "insult" {
 
 						add := strings.Split(m.Content, "> ")[1]
@@ -263,7 +263,7 @@ func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 
 			for _, element := range adminChannels {
 				if m.ChannelID == element {
-					if strings.Split(m.Content, " ")[1] == "insult" {
+					if strings.Split(m.Content, " ")[1] == "insult" && strings.Contains(m.Content, "> ") {
 						deleted := strings.Split(m.Content, "> ")[1]
 						var index = -1
 						for i,insult := range insults.Insults {
@@ -332,21 +332,38 @@ func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 
 		}
 
-		if strings.Contains(m.Content, "timer") && !strings.Contains(m.Content, "add") {
+		if strings.Contains(m.Content, "timer") && !strings.Contains(m.Content, "add") && strings.Contains(m.Content, "> ") {
 			time, err := strconv.Atoi(strings.Split(m.Content, "> ")[1])
 			if  err != nil {
 				dg.ChannelMessageSend(m.ChannelID, "*Invalid parameters*")
 			} else {
 				if time > 0 {
-					dg.ChannelMessageSend(m.ChannelID, "**TIMER:**")
-					dg.ChannelMessageSend(m.ChannelID, "https://seanja.com/secret/countdown/gif.php?time=" + strconv.Itoa(time) + "sec")
+					s := gocron.NewScheduler()
+					timeMessage,_ := dg.ChannelMessageSend(m.ChannelID, "```TIMER: " + strconv.Itoa(time) + "```")
+					s.Every(1).Seconds().Do(func() {
+						time -= 1
+						if time != 0 {
+							dg.ChannelMessageEdit(m.ChannelID, timeMessage.ID, "```TIMER: "  + strconv.Itoa(time) + "```")
+						} else {
+							dg.ChannelMessageEdit(m.ChannelID, timeMessage.ID, "```TIMER FINISHED!```")
+							s.Clear()
+						}
+					})
+
+					<-s.Start()
+
+				} else {
+					dg.ChannelMessageSend(m.ChannelID, "Type `s!timer > ` *time in seconds*")
 				}
 			}
+		} else {
+			dg.ChannelMessageSend(m.ChannelID, "Type `s!timer > ` *time in seconds*")
 		}
 
 		if strings.Contains(m.Content, "help") && !strings.Contains(m.Content, "add") {
 			dg.ChannelMessageSend(m.ChannelID, "Type `s!` followed by:")
 			dg.ChannelMessageSend(m.ChannelID, "- `usename` `random` OR `> custom name`")
+			dg.ChannelMessageSend(m.ChannelID, "- `s!timer > ` `time in seconds`")
 			dg.ChannelMessageSend(m.ChannelID, "- `insult @user`")
 			dg.ChannelMessageSend(m.ChannelID, "- `list` `insults`")
 			dg.ChannelMessageSend(m.ChannelID, "**ADMINS**: `add`/`delete` `> newInsult`")
