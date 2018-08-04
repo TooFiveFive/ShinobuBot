@@ -16,7 +16,7 @@ import (
 	"log"
 	"io"
 	"math/rand"
-	"time"
+	"strconv"
 )
 
 // Variables used for command line parameters
@@ -58,6 +58,8 @@ type Episode struct {
 	Id   string `json:"id"`
 }
 
+var Guilds []string
+
 func init() {
 	flag.StringVar(&Token, "t", TokenBot, "Bot Token")
 	flag.Parse()
@@ -74,6 +76,7 @@ func main() {
 	go mainCron(dg)
 	dg.AddHandler(respondTo)
 
+
 	err = dg.Open()
 	if err != nil {
 		fmt.Println("error opening connection,", err)
@@ -81,8 +84,10 @@ func main() {
 	}
 
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
+	dg.UpdateStatus(0, "Say s!help")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+
 	<-sc
 
 	dg.Close()
@@ -119,6 +124,7 @@ func editC(dg *discordgo.Session, chName string, chEp string) {
 		dg.ChannelMessageSend(channel.ID,  "**" + chName + " Episode " + chEp + "** has just been released. Share your thoughts on it here! ⚡⚡⚡")
 		dg.ChannelMessageSend(channel.ID,  "*Source Code: https://github.com/TooFiveFive/ShinobuBot*")
 		dg.ChannelMessageSend(channel.ID,  "/poll 'Did you Enjoy the Episode?'")
+		dg.ChannelMessageSend(channel.ID,  "-kitsu anime " + chName)
 		fmt.Println(chName + " " + chEp)
 
 		//delete 20th channel
@@ -156,6 +162,7 @@ func editC(dg *discordgo.Session, chName string, chEp string) {
 func mainCron(dg *discordgo.Session) {
 
 	gocron.Every(30).Seconds().Do(func() {
+
 		feed, err := rss.Fetch("http://horriblesubs.info/rss.php?res=1080")
 		fmt.Println("Latest: " + feed.Items[0].Title)
 		if err != nil {
@@ -168,9 +175,18 @@ func mainCron(dg *discordgo.Session) {
 
 		editC(dg, epn, epi)
 	})
+
+	gocron.Every(10).Seconds().Do(func() {
+
+		fmt.Println("Checked. part of: " + strconv.Itoa(len(dg.State.Guilds)) + " Guilds")
+		guilds := make([]string,len(dg.State.Guilds))
+		for ind, guild := range dg.State.Guilds {
+			guilds[ind] = guild.ID
+		}
+		Guilds = guilds
+	})
 	_, timev := gocron.NextRun()
 	fmt.Println(timev)
-
 
 	<- gocron.Start()
 
@@ -184,6 +200,8 @@ func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == dg.State.User.ID {
 		return
 	}
+
+
 
 	var adminChannels = [...]string{"471445082600636428"}
 
@@ -203,9 +221,7 @@ func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 	if strings.HasPrefix(m.Content, "s!") {
 		if strings.Contains(m.Content, "insult") && len(m.Mentions) == 1 {
 
-			s1 := rand.NewSource(time.Now().UnixNano())
-			r1 := rand.New(s1)
-			num := r1.Intn(len(insults.Insults))
+			num := rand.Intn(len(insults.Insults))
 			message := insults.Insults[num]
 
 			dg.ChannelMessageSend(m.ChannelID, "**" + message + " " + m.Mentions[0].Mention() + "**")
@@ -238,33 +254,108 @@ func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 
 						dg.ChannelMessageSend(m.ChannelID, "I added *" + add + "* to my insult list you sick boi.")
 					}
+				} else {
+					dg.ChannelMessageSend(m.ChannelID, "*You don't have permission to do that here*")
 				}
+			}
+		}
+		if strings.Contains(m.Content, "delete") {
+
+			for _, element := range adminChannels {
+				if m.ChannelID == element {
+					if strings.Split(m.Content, " ")[1] == "insult" {
+						deleted := strings.Split(m.Content, "> ")[1]
+						var index = -1
+						for i,insult := range insults.Insults {
+							if deleted == insult {
+								index = i
+							}
+						}
+						if index != -1 {
+							arrayNew := remove(insults.Insults, index)
+							var insultsNew Insult
+							insultsNew.Insults = arrayNew
+
+							jData,_ := json.Marshal(insultsNew)
+							fmt.Println(string(jData))
+							file, err := os.OpenFile("insults.json",os.O_CREATE, 0666)
+							if err != nil {
+								log.Fatal("Cannot create file", err)
+							}
+							defer file.Close()
+
+							io.WriteString(file, string(jData))
+
+							//if other method doesn't work
+							ioutil.WriteFile("insults.json", jData, 0644)
+							dg.ChannelMessageSend(m.ChannelID, "*" + deleted + "* removed from insults list")
+						} else {
+							dg.ChannelMessageSend(m.ChannelID, "*" + deleted + "* not found")
+						}
+					}
+				} else {
+					dg.ChannelMessageSend(m.ChannelID, "*You don't have permission to do that here*")
+				}
+			}
+
+		}
+		if strings.Contains(m.Content, "list") && !strings.Contains(m.Content, "add"){
+			if strings.Split(m.Content, " ")[1] == "insults" {
+				var insultString string
+				for _,insult := range insults.Insults {
+					insultString += insult + "  👉  "
+				}
+				dg.ChannelMessageSend(m.ChannelID, "**List of insults:**" )
+				dg.ChannelMessageSend(m.ChannelID, insultString)
 			}
 		}
 
 		if strings.Contains(m.Content, "username") && !strings.Contains(m.Content, "add") {
 			if strings.Contains(m.Content, "random") {
-				s1 := rand.NewSource(time.Now().UnixNano())
-				r1 := rand.New(s1)
-				num := r1.Intn(len(UsernameRands))
+				num := rand.Intn(len(UsernameRands))
 				fmt.Println(num)
 				username := UsernameRands[num]
 
-				dg.GuildMemberNickname("357256989853745152", m.Author.ID, username)
+				for ind := range Guilds {
+					fmt.Println(Guilds[ind])
+					dg.GuildMemberNickname(Guilds[ind], m.Author.ID, username)
+				}
+
 			} else {
 				if !strings.Contains(m.Content, "⚡") {
-					dg.GuildMemberNickname("357256989853745152", m.Author.ID, strings.Split(m.Content, "> ")[1])
+					for ind := range Guilds {
+						fmt.Println(Guilds[ind])
+						dg.GuildMemberNickname(Guilds[ind], m.Author.ID, strings.Split(m.Content, "> ")[1])
+					}
 				}
 			}
 
+		}
+
+		if strings.Contains(m.Content, "timer") && !strings.Contains(m.Content, "add") {
+			time, err := strconv.Atoi(strings.Split(m.Content, "> ")[1])
+			if  err != nil {
+				dg.ChannelMessageSend(m.ChannelID, "*Invalid parameters*")
+			} else {
+				if time > 0 {
+					dg.ChannelMessageSend(m.ChannelID, "**TIMER:**")
+					dg.ChannelMessageSend(m.ChannelID, "https://seanja.com/secret/countdown/gif.php?time=" + strconv.Itoa(time) + "sec")
+				}
+			}
 		}
 
 		if strings.Contains(m.Content, "help") && !strings.Contains(m.Content, "add") {
 			dg.ChannelMessageSend(m.ChannelID, "Type `s!` followed by:")
 			dg.ChannelMessageSend(m.ChannelID, "- `usename` `random` OR `> custom name`")
 			dg.ChannelMessageSend(m.ChannelID, "- `insult @user`")
+			dg.ChannelMessageSend(m.ChannelID, "- `list` `insults`")
+			dg.ChannelMessageSend(m.ChannelID, "**ADMINS**: `add`/`delete` `> newInsult`")
 		}
 
 
 	}
+}
+func remove(s []string, i int) []string {
+	s[i] = s[len(s)-1]
+	return s[:len(s)-1]
 }
