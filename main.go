@@ -195,6 +195,12 @@ func mainCron(dg *discordgo.Session) {
 type Insult struct {
 	Insults []string `json:"insult"`
 }
+type Profile struct {
+	Bio string `json:"bio"`
+	FavouriteAnime []string `json:"anime"`
+	FavouriteManga []string `json:"manga"`
+	Links []string `json:"links"`
+}
 var Timing = false
 var CancelTimer = false
 
@@ -312,6 +318,114 @@ func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 		}
 
+
+		if strings.Contains(m.Content, "profile") && !strings.Contains(m.Content, "add") {
+			if strings.Contains(m.Content, "edit") {
+				profile, notExist := os.Open("./profiles/" + m.Author.ID + ".json")
+
+
+				if notExist != nil {
+					dg.ChannelMessageSend(m.ChannelID, "No profile found. Type *s!profile* to create it.")
+				} else {
+					var profileObj Profile
+					profileByte, _ := ioutil.ReadAll(profile)
+
+					json.Unmarshal(profileByte, &profileObj)
+					if strings.Contains(m.Content, "> ") {
+						if strings.Contains(strings.Split(m.Content, " ")[2], "bio") {
+							add := strings.Split(m.Content, "> ")[1]
+							profileObj.Bio = add
+							profileData, err := json.Marshal(profileObj)
+							if err != nil {
+								log.Fatal(err)
+							}
+							ioutil.WriteFile("./profiles/" + m.Author.ID + ".json", profileData, 0644)
+							defer profile.Close()
+						}
+						if strings.Contains(strings.Split(m.Content, " ")[2], "favAnime") {
+							add := strings.Split(m.Content, "> ")[1]
+							addArray := make([]string, len(profileObj.FavouriteAnime) + 1)
+							for i := range profileObj.FavouriteAnime {
+								addArray[i] = profileObj.FavouriteAnime[i]
+							}
+							addArray[len(addArray) - 1] = add
+							profileObj.FavouriteAnime = addArray
+							profileData, err := json.Marshal(profileObj)
+							if err != nil {
+								log.Fatal(err)
+							}
+							ioutil.WriteFile("./profiles/" + m.Author.ID + ".json", profileData, 0644)
+							defer profile.Close()
+						}
+						if strings.Contains(strings.Split(m.Content, " ")[2], "favManga") {
+							add := strings.Split(m.Content, "> ")[1]
+							addArray := make([]string, len(profileObj.FavouriteManga) + 1)
+							for i := range profileObj.FavouriteManga {
+								addArray[i] = profileObj.FavouriteManga[i]
+							}
+							addArray[len(addArray) - 1] = add
+							profileObj.FavouriteManga = addArray
+							profileData, err := json.Marshal(profileObj)
+							if err != nil {
+								log.Fatal(err)
+							}
+							ioutil.WriteFile("./profiles/" + m.Author.ID + ".json", profileData, 0644)
+							defer profile.Close()
+						}
+						if strings.Contains(strings.Split(m.Content, " ")[2], "link") {
+							add := "<" + strings.Split(m.Content, "> ")[1] + ">"
+							addArray := make([]string, len(profileObj.Links) + 1)
+							for i := range profileObj.Links {
+								addArray[i] = profileObj.Links[i]
+							}
+							addArray[len(addArray) - 1] = add
+							profileObj.Links = addArray
+							profileData, err := json.Marshal(profileObj)
+							if err != nil {
+								log.Fatal(err)
+							}
+							ioutil.WriteFile("./profiles/" + m.Author.ID + ".json", profileData, 0644)
+							defer profile.Close()
+						}
+					} else {
+						dg.ChannelMessageSend(m.ChannelID, "*s!profile edit bio|favAnime|favManga|link > *entry")
+						dg.ChannelMessageSend(m.ChannelID, "You can add more than one favAnime, favManga or link")
+					}
+				}
+			} else {
+				profile, notExist := os.Open("./profiles/" + m.Author.ID + ".json")
+
+				if notExist != nil {
+					created, err := os.Create("./profiles/" + m.Author.ID + ".json")
+					var empty Profile
+					emptydata, err := json.Marshal(empty)
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer created.Close()
+					ioutil.WriteFile("./profiles/" + m.Author.ID + ".json", emptydata, 0644)
+
+					fmt.Println("Created " +  m.Author.ID + ".json")
+					dg.ChannelMessageSend(m.ChannelID, "Created your profile. Type *s!profile edit* to edit it")
+				} else {
+					defer profile.Close()
+
+					profileValue, _ := ioutil.ReadAll(profile)
+
+					var profileVar Profile
+					json.Unmarshal(profileValue, &profileVar)
+					dg.ChannelMessageSend(m.ChannelID, "***Profile of: ***" + m.Author.Mention() + ":" + `
+----------
+` +"**Bio: **" + profileVar.Bio + `
+` + "**Favourite Anime:** " + strings.Join(profileVar.FavouriteAnime, " | ") + `
+` + "**Favourite Manga:** " + strings.Join(profileVar.FavouriteManga, " | ") + `
+` + "**Links:** " + strings.Join(profileVar.Links, " | "))
+				}
+
+			}
+		}
+
+
 		if strings.Contains(m.Content, "username") && !strings.Contains(m.Content, "add") {
 			if strings.Contains(m.Content, "random") {
 				num := rand.Intn(len(UsernameRands))
@@ -389,12 +503,14 @@ func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		if strings.Contains(m.Content, "help") && !strings.Contains(m.Content, "add") {
-			dg.ChannelMessageSend(m.ChannelID, "Type `s!` followed by:")
-			dg.ChannelMessageSend(m.ChannelID, "- `usename` `random` OR `> custom name`")
-			dg.ChannelMessageSend(m.ChannelID, "- `s!timer > ` `time in seconds` OR `cancel`")
-			dg.ChannelMessageSend(m.ChannelID, "- `insult @user`")
-			dg.ChannelMessageSend(m.ChannelID, "- `list` `insults`")
-			dg.ChannelMessageSend(m.ChannelID, "**ADMINS**: `add`/`delete` `> newInsult`")
+			dg.ChannelMessageSend(m.ChannelID, `
+**Type *s!* followed by:**
+usename random OR > *custom name*
+timer > *time in seconds* OR cancel
+insult *@user*
+list insults
+**ADMINS:**
+add OR delete > *newInsult*`)
 		}
 
 
