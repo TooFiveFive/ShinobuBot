@@ -195,6 +195,8 @@ func mainCron(dg *discordgo.Session) {
 type Insult struct {
 	Insults []string `json:"insult"`
 }
+var Timing = false
+var CancelTimer = false
 
 func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == dg.State.User.ID {
@@ -299,7 +301,7 @@ func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 
 		}
-		if strings.Contains(m.Content, "list") && !strings.Contains(m.Content, "add"){
+		if strings.Contains(m.Content, "list") && !strings.Contains(m.Content, "add") && strings.Contains(m.Content, " "){
 			if strings.Split(m.Content, " ")[1] == "insults" {
 				var insultString string
 				for _,insult := range insults.Insults {
@@ -322,14 +324,20 @@ func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 				}
 
 			} else {
-				if !strings.Contains(m.Content, "⚡") {
+				if !strings.Contains(m.Content, "⚡") && strings.Contains(m.Content, "> ") {
 					for ind := range Guilds {
 						fmt.Println(Guilds[ind])
 						dg.GuildMemberNickname(Guilds[ind], m.Author.ID, strings.Split(m.Content, "> ")[1])
 					}
+				} else {
+					dg.ChannelMessageSend(m.ChannelID, "*Parameters are missing*")
 				}
 			}
 
+		}
+		if strings.Contains(m.Content, "timer cancel") && !strings.Contains(m.Content, "add") {
+			dg.ChannelMessageSend(m.ChannelID, "*Timer Cancelled!*")
+			CancelTimer = true
 		}
 
 		if strings.Contains(m.Content, "timer") && !strings.Contains(m.Content, "add") && strings.Contains(m.Content, "> ") {
@@ -338,32 +346,52 @@ func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 				dg.ChannelMessageSend(m.ChannelID, "*Invalid parameters*")
 			} else {
 				if time > 0 {
-					s := gocron.NewScheduler()
-					timeMessage,_ := dg.ChannelMessageSend(m.ChannelID, "```TIMER: " + strconv.Itoa(time) + "```")
-					s.Every(1).Seconds().Do(func() {
-						time -= 1
-						if time != 0 {
-							dg.ChannelMessageEdit(m.ChannelID, timeMessage.ID, "```TIMER: "  + strconv.Itoa(time) + "```")
-						} else {
-							dg.ChannelMessageEdit(m.ChannelID, timeMessage.ID, "```TIMER FINISHED!```")
-							s.Clear()
-						}
-					})
+					if time > 1000 {
+						dg.ChannelMessageSend(m.ChannelID, "*Time must be less than 1000 seconds*")
+					} else {
+						if !Timing {
+							s := gocron.NewScheduler()
+							Timing = true
+							timeMessage,_ := dg.ChannelMessageSend(m.ChannelID, "```TIMER: " + strconv.Itoa(time) + "```")
+							s.Every(1).Second().Do(func() {
+								time -= 2
+								if CancelTimer {
+									CancelTimer = false
+									time = -100
+									s.Clear()
+								}
+								if time > 0 {
+									dg.ChannelMessageEdit(m.ChannelID, timeMessage.ID, "```TIMER: "  + strconv.Itoa(time) + "```")
+								} else {
+									Timing = false
+									if time == -100 {
+										dg.ChannelMessageEdit(m.ChannelID, timeMessage.ID, "```TIMER CANCELLED!```")
+									} else {
+										dg.ChannelMessageEdit(m.ChannelID, timeMessage.ID, "```TIMER FINISHED!```")
+									}
 
-					<-s.Start()
+									s.Clear()
+								}
+							})
+
+							<-s.Start()
+						} else {
+							dg.ChannelMessageSend(m.ChannelID, "*There's already a timer counting down.*")
+						}
+					}
+
+
 
 				} else {
 					dg.ChannelMessageSend(m.ChannelID, "Type `s!timer > ` *time in seconds*")
 				}
 			}
-		} else {
-			dg.ChannelMessageSend(m.ChannelID, "Type `s!timer > ` *time in seconds*")
 		}
 
 		if strings.Contains(m.Content, "help") && !strings.Contains(m.Content, "add") {
 			dg.ChannelMessageSend(m.ChannelID, "Type `s!` followed by:")
 			dg.ChannelMessageSend(m.ChannelID, "- `usename` `random` OR `> custom name`")
-			dg.ChannelMessageSend(m.ChannelID, "- `s!timer > ` `time in seconds`")
+			dg.ChannelMessageSend(m.ChannelID, "- `s!timer > ` `time in seconds` OR `cancel`")
 			dg.ChannelMessageSend(m.ChannelID, "- `insult @user`")
 			dg.ChannelMessageSend(m.ChannelID, "- `list` `insults`")
 			dg.ChannelMessageSend(m.ChannelID, "**ADMINS**: `add`/`delete` `> newInsult`")
