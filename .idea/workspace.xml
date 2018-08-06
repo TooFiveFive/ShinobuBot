@@ -2,9 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5c9a5dcc-b5ed-4f0c-900b-e20a8addb785" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/ideas.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/profiles/150658933307080704.json" beforeDir="false" afterPath="$PROJECT_DIR$/profiles/150658933307080704.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/profiles/224282280691105792.json" beforeDir="false" afterPath="$PROJECT_DIR$/profiles/224282280691105792.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shows.json" beforeDir="false" afterPath="$PROJECT_DIR$/shows.json" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -19,11 +20,20 @@
       <file leaf-file-name="main.go" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="379">
-              <caret line="426" lean-forward="true" selection-start-line="426" selection-end-line="426" />
+            <state relative-caret-position="175">
+              <caret line="328" column="106" lean-forward="true" selection-start-line="328" selection-start-column="106" selection-end-line="328" selection-end-column="106" />
               <folding>
                 <element signature="e#14#240#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="150658933307080704.json" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/profiles/150658933307080704.json">
+          <provider selected="true" editor-type-id="text-editor">
+            <state>
+              <caret column="825" selection-start-column="825" selection-end-column="825" />
             </state>
           </provider>
         </entry>
@@ -94,6 +104,7 @@
   <component name="FindInProjectRecents">
     <findStrings>
       <find>create</find>
+      <find>FavouriteAnime</find>
     </findStrings>
   </component>
   <component name="GOROOT" path="C:\Go" />
@@ -112,9 +123,9 @@
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/env.go" />
         <option value="$PROJECT_DIR$/ideas.txt" />
-        <option value="$PROJECT_DIR$/main.go" />
         <option value="$PROJECT_DIR$/insults.json" />
         <option value="$PROJECT_DIR$/profiles/150658933307080704.json" />
+        <option value="$PROJECT_DIR$/main.go" />
       </list>
     </option>
   </component>
@@ -478,13 +489,6 @@
     <entry file="file://$PROJECT_DIR$/main">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/shows.json">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret column="45" selection-start-column="45" selection-end-column="45" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Dockerfile">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="68">
@@ -513,9 +517,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/profiles.json">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
+    <entry file="file://$PROJECT_DIR$/profiles.json" />
     <entry file="file://$PROJECT_DIR$/ideas.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state>
@@ -523,11 +525,23 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/150658933307080704.json">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
+    <entry file="file://$PROJECT_DIR$/150658933307080704.json" />
     <entry file="file://$PROJECT_DIR$/profiles/224282280691105792.json">
       <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/env.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="51">
+          <caret line="3" selection-start-line="3" selection-end-line="3" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/shows.json">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="45" selection-start-column="45" selection-end-column="45" />
+        </state>
+      </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/insults.json">
       <provider selected="true" editor-type-id="text-editor">
@@ -539,21 +553,14 @@
     <entry file="file://$PROJECT_DIR$/profiles/150658933307080704.json">
       <provider selected="true" editor-type-id="text-editor">
         <state>
-          <caret column="97" selection-start-column="97" selection-end-column="97" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/env.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="51">
-          <caret line="3" selection-start-line="3" selection-end-line="3" />
+          <caret column="825" selection-start-column="825" selection-end-column="825" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/main.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="379">
-          <caret line="426" lean-forward="true" selection-start-line="426" selection-end-line="426" />
+        <state relative-caret-position="175">
+          <caret line="328" column="106" lean-forward="true" selection-start-line="328" selection-start-column="106" selection-end-line="328" selection-end-column="106" />
           <folding>
             <element signature="e#14#240#0" expanded="true" />
           </folding>
