@@ -112,7 +112,7 @@ func editC(dg *discordgo.Session, chName string, chEp string) {
 	} else {
 		var create = new(discordgo.ChannelEdit)
 		create.Name = chName + " " + chEp
-		create.Position = -100
+		create.Position = 1
 		create.ParentID = "471391284221837342"
 		create.NSFW = false
 		create.Topic = "Share your thoughts on " + chName + " Episode " + chEp + " here!"
@@ -151,6 +151,14 @@ func editC(dg *discordgo.Session, chName string, chEp string) {
 		defer file.Close()
 
 		io.WriteString(file, string(jData))
+		for ind, e := range jsonAll.Episodes {
+			var change = new(discordgo.ChannelEdit)
+			change.Position = ind + 1
+			change.ParentID = "471391284221837342"
+			change.Name = e.Name
+			create.NSFW = false
+			dg.ChannelEditComplex(e.Id, change)
+		}
 
 		//if other method doesn't work
 		ioutil.WriteFile("shows.json", jData, 0644)
@@ -171,7 +179,7 @@ func mainCron(dg *discordgo.Session) {
 		s := strings.Split(feed.Items[0].Title, "] ")
 		ep := strings.Split(s[1], " - ")
 		epn := ep[0]
-		epi := strings.Split(ep[1], " [")[0]
+		epi := strings.Split(ep[len(ep) - 1], " [")[0]
 
 		editC(dg, epn, epi)
 	})
@@ -583,14 +591,16 @@ func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 			dg.ChannelMessageSend(m.ChannelID, `
 **Type *s!* followed by:**
 profile
-profile @user
-profile edit | bio / favAnime / favManga / link | entry no / leave blank | > entry
+profile *@user*
+profile edit | *bio* / *favAnime* / *favManga* / *link* | *entry no* / leave blank | *>* *entry*
 usename random OR > *custom name*
 timer > *time in seconds* OR cancel
 insult *@user*
 list insults
 **ADMINS:**
-add OR delete > *newInsult*`)
+add OR delete insult > *newInsult*
+
+For more info, go here: <https://github.com/TooFiveFive/ShinobuBot/wiki>`)
 		}
 
 
