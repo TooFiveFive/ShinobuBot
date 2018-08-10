@@ -211,6 +211,8 @@ type Profile struct {
 }
 var Timing = false
 var CancelTimer = false
+var Queue []string
+var Promoting = false
 
 func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == dg.State.User.ID {
@@ -549,6 +551,7 @@ func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 						dg.ChannelMessageSend(m.ChannelID, "*Time must be less than 1000 seconds*")
 					} else {
 						if !Timing {
+							dg.UpdateStatus(0, "Timing")
 							s := gocron.NewScheduler()
 							Timing = true
 							timeMessage,_ := dg.ChannelMessageSend(m.ChannelID, "```TIMER: " + strconv.Itoa(time) + "```")
@@ -565,8 +568,10 @@ func respondTo(dg *discordgo.Session, m *discordgo.MessageCreate) {
 									Timing = false
 									if time == -100 {
 										dg.ChannelMessageEdit(m.ChannelID, timeMessage.ID, "```TIMER CANCELLED!```")
+										dg.UpdateStatus(0, "Say s!help")
 									} else {
 										dg.ChannelMessageEdit(m.ChannelID, timeMessage.ID, "```TIMER FINISHED!```")
+										dg.UpdateStatus(0, "Say s!help")
 									}
 
 									s.Clear()
@@ -597,14 +602,62 @@ usename random OR > *custom name*
 timer > *time in seconds* OR cancel
 insult *@user*
 list insults
+promote
+promote *@user*
 **ADMINS:**
 add OR delete insult > *newInsult*
 
 For more info, go here: <https://github.com/TooFiveFive/ShinobuBot/wiki>`)
 		}
+		if strings.Contains(m.Content, "promote") && !strings.Contains(m.Content, "add") {
+			if len(m.Mentions) == 0 {
+				if len(Queue) < 30 {
+					dg.ChannelMessageSend(m.ChannelID, "*" + m.Author.Username + "* is **" + strconv.Itoa(len(Queue)) + "** in Promotion Queue")
+					Queue = append(Queue, m.Author.Username)
+					timePromote(dg, m)
+				} else {
+					dg.ChannelMessageSend(m.ChannelID, "*Queue full. Please wait*")
+				}
+			} else {
+				if len(Queue) < 30 {
+					dg.ChannelMessageSend(m.ChannelID, "*" + m.Mentions[0].Username + "* is **" + strconv.Itoa(len(Queue)) + "** in Promotion Queue")
+					Queue = append(Queue, m.Mentions[0].Username)
+					timePromote(dg, m)
+				} else {
+					dg.ChannelMessageSend(m.ChannelID, "*Queue full. Please wait*")
+				}
+			}
+
+		}
 
 
 	}
+}
+func timePromote(dg *discordgo.Session, m *discordgo.MessageCreate) {
+	if len(Queue) > 0 && !Promoting {
+		dg.UpdateStatus(0, "Hi " + Queue[0])
+		fmt.Println("Queue: " + strconv.Itoa(len(Queue)))
+		Promoting = true
+		dg.ChannelMessageSend(m.ChannelID, "Promoting *" + Queue[0] + "* for the next minute")
+		s := gocron.NewScheduler()
+		var time = 60
+		s.Every(1).Second().Do(func() {
+			time -= 1
+			if time == 0 {
+				Promoting = false
+				if len(Queue) == 1 {
+					Queue = []string{}
+					dg.UpdateStatus(0, "Say s!help")
+				} else {
+					Queue = append(Queue[:0], Queue[1:]...)
+				}
+				s.Clear()
+				timePromote(dg, m)
+			}
+		})
+		<-s.Start()
+	}
+
 }
 func remove(s []string, i int) []string {
 	s[i] = s[len(s)-1]
